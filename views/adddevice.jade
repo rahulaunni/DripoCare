@@ -1,0 +1,9 @@
+.col-sm-12
+  br
+  br
+  form(role='form',action="/adddevice",method="post")
+    h4 Please add a device
+    .form-group
+    input.form-control(type='text', name="deviceid", placeholder='Device #ID')
+    br
+    button.btn.btn-info(type='submit') Add device
