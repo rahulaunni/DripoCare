@@ -8,6 +8,9 @@ var Patient = new Schema({
     age:Number,
     weight:Number,
     _bed:{ type: Schema.ObjectId, ref: 'Bed' },
+    _medications:[{ type: Schema.ObjectId, ref: 'Medication'}],
+    _tasks:[{ type: Schema.ObjectId, ref: 'Tasks'}],
+    _timetable:[{ type: Schema.ObjectId, ref: 'Timetable'}],
 });
 
 

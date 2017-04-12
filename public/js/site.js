@@ -28,16 +28,12 @@ $.get( "/home", function( data ) {
   $( ".middlebar" ).html( data );
 });
 
+
+
 $( ".leftbar .icon" ).click(function(){
 	$.get($(this).attr("data-url"), function( data ) {
   $( ".middlebar" ).html( data );
 });
 	
 });
-
-
-$( "#add_med" ).click(function() {
-console.log("ok");
-});
-
 

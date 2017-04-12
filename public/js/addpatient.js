@@ -52,7 +52,9 @@ $( ".medicinedata" ).each(function( index ) {
 	data.medications[i]=medicine_data;
     i++;
 });
+console.log("Ok");
 console.log(data);
+
 				$.ajax({
 						type: 'POST',
 						data: JSON.stringify(data),

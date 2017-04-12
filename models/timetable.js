@@ -9,5 +9,5 @@ infused:String,
 time:Number,
 });
 
-module.exports = mongoose.model('timetable',timetable);
+module.exports = mongoose.model('Timetable',timetable);
 

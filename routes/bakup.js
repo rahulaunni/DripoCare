@@ -179,70 +179,71 @@ console.log(req.body);
 
 
 // ADDING PATIENT
-		var patient= new Patient({
+        var patient= new Patient({
         name: req.body.patient.name,
         age: req.body.patient.age,
         weight: req.body.patient.weight,
         _bed: req.body.bed,
-		});
+        });
        patient.save(function(err, patient_to_add) {
         if (err) return console.error(err);
-			
-			// get medications
-			
-			var med=[{}];
-			for (var key in req.body.medications) {
-				var medin={}
-				medin._bed=req.body.bed,
-				medin._station=req.session.station,
-				medin.name=req.body.medications[key].name,
-				medin.rate=req.body.medications[key].rate
-				
-				med[key]=medin;
-				}
-				
-			Medication.collection.insert(med, onInsert);
+            
+            // get medications
+            
+            var med=[{}];
+            for (var key in req.body.medications) {
+                var medin={}
+                medin._bed=req.body.bed,
+                medin._station=req.session.station,
+                medin.name=req.body.medications[key].name,
+                medin.rate=req.body.medications[key].rate
+                
+                med[key]=medin;
+                }
+                
+            Medication.collection.insert(med, onInsert);
 
-				function onInsert(err,docs) {
-				if (err) {
+                function onInsert(err,docs) {
+                if (err) {
        
-				} else {
-						// add timings of medicine to timings collection
-						tim=[{}];
-						var cn=0;
-						docs.ops.forEach(function callback(currentValue, index, array) {
-							
-							 var arrin=req.body.medications[index].time;
-							 for(var j=0;j<arrin.length;j++){
-								 var timin={};
-							 	 timin._bed=req.body.bed;
-								 timin._medication=currentValue._id;
-								 timin.infused="not_infused";
-								 timin.time=arrin[j];
-								 tim[cn]=timin;
-								 cn++;
-								 }
-													
-						});
-						
-						Timetable.collection.insert(tim, onInsert);
-				
-								function onInsert(err,times) {
-									if (err) {
-									} else {
-									console.log(times);
-                               
+                } else {
+                        // add timings of medicine to timings collection
+                        tim=[{}];
+                        var cn=0;
+                        docs.ops.forEach(function callback(currentValue, index, array) {
+                            
+                             var arrin=req.body.medications[index].time;
+                             for(var j=0;j<arrin.length;j++){
+                                 var timin={};
+                                 timin._bed=req.body.bed;
+                                 timin._medication=currentValue._id;
+                                 timin.infused="not_infused";
+                                 timin.time=arrin[j];
+                                 tim[cn]=timin;
+                                 cn++;
+                                 }
+                                                    
+                        });
+                        
+                        Timetable.collection.insert(tim, onInsert);
+                
+                                function onInsert(err,times) {
+                                    if (err) {
+                                    } else {
+                                    console.log(times);
+
+                                
 
 
 
 
-									res.redirect('/');
-									}
-								}
+                                    res.redirect('/');
+                                    }
+                                }
 
-					}
-				}
-		
+                    }
+                }
+        
 
     });
 

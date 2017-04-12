@@ -96,6 +96,8 @@ background:#263238;
 text-align:center;
 display:flex;
 }
+
+
 .bed h3{
 display: flex;
   justify-content: center;
@@ -103,6 +105,8 @@ display: flex;
   text-align: center;
   width:100%;
 }
+
+
 
 .middlebar .card div{
 margin:0px;
@@ -180,4 +184,7 @@ border-right:1px solid #AAAAAA;
   margin:0;
   float: none;
   margin:auto;
+}
+.select{
+  background-color: green;
 }
