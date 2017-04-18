@@ -2,17 +2,17 @@ div.col-sm-12
       each bed in beds
          div.col-sm-12.card
                        div.col-sm-2.bed
-                         h3 #{bed.bname} 
+                         h3 #{bed.bname}
 
                        div.col-sm-10(style="background:#FFFFFF")
-                         //- div.col-sm-6.cardname #{tim.name} 
+                         div.col-sm-6.cardname #{bed._patient.name} 
                            
                          div.col-sm-6.cardname
                            h4 Next Infusion 3mts
                          div.col-sm-12.medicines
                            div.col-sm-3
-                             //- p
-                             //-   span #{tim._medication.name}
+                             p
+                               span #{bed._patient._medication[0].name}
                            div.col-sm-9.schhold
                              div.col-sm-1
                              div.col-sm-1
@@ -28,7 +28,9 @@ div.col-sm-12
                              div.col-sm-1.cnt 10:00
                          div.col-sm-12.medicines(style="background:#DDDDDD")
                            div.col-sm-3
-                             p Medicine Name
+                             p 
+                             span #{bed._patient._medication[1].name}
+
                            div.col-sm-9.schhold
                              div.col-sm-1
                              div.col-sm-1.cnt 03:00

@@ -51,8 +51,10 @@ router.get('/home', checkAuthentication, function(req, res) {
                     count++; 
                 } 
             } 
-        Bed.find({'_id': {$in:arr_bed_new}}).exec(function(err,bed){
-         console.log(JSON.stringify(bed));
+        // console.log(JSON.stringify(arr_bed_new));
+        // for (var key in  arr_bed_new)
+        Bed.find({'_id': {$in:arr_bed_new}}).populate({path:'_patient',model:'Patient',populate:{path:'_medication',model:'Medication',populate:{path:'_timetable',model:'Timetable'}}}).exec(function(err,bed){ 
+            console.log(JSON.stringify(bed));
          res.render('home', {user: req.user, tims:tim,abn:arr_bed_new,beds:bed});
             });
     });
@@ -103,7 +105,7 @@ router.get('/addpatient', checkAuthentication, function(req, res) {
 
     Bed.find().populate('_station').exec(function(err, bed) {
         if (err) return console.error(err);
-        console.log(bed);    
+        // console.log(bed);    
         res.render('addpatient', {
             user: req.user,
             beds: bed
@@ -189,8 +191,11 @@ console.log(req.body);
         if (err) return console.error(err);
 			
 			// get medications
-			
-			var med=[{}];
+            Bed.findOne({ _id: req.body.bed}, function (err, doc){
+              doc._patient = patient;
+              doc.save();
+            });			
+            var med=[{}];
 			for (var key in req.body.medications) {
 				var medin={}
 				medin._bed=req.body.bed,
@@ -207,7 +212,12 @@ console.log(req.body);
 				if (err) {
        
 				} else {
+                        // console.log('med value');
+                        // console.log(med[0]._id);
+                        for (var key in med){
+                        Patient.collection.update({_id:patient._id},{$push:{_medication:med[key]._id}},{upsert:false})
 						// add timings of medicine to timings collection
+                        }
 						tim=[{}];
 						var cn=0;
 						docs.ops.forEach(function callback(currentValue, index, array) {
@@ -230,12 +240,12 @@ console.log(req.body);
 								function onInsert(err,times) {
 									if (err) {
 									} else {
-									console.log(times);
-                               
-
-
-
-
+                                    for (var key in med) 
+                                    {
+                                        for (var key2 in tim)
+                                            if(med[key]._id===tim[key2]._medication)
+                                    Medication.collection.update({_id:med[key]._id},{$push:{_timetable:tim[key2]._id}},{upsert:false})
+                                    }
 									res.redirect('/');
 									}
 								}
