@@ -8,55 +8,15 @@ div.col-sm-12
                          div.col-sm-6.cardname #{bed._patient.name} 
                            
                          div.col-sm-6.cardname
-                           h4 Next Infusion 3mts
+                           h4 
                          div.col-sm-12.medicines
-                           div.col-sm-3
-                             p
-                               span #{bed._patient._medication[0].name}
-                           div.col-sm-9.schhold
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 03:00
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 06:00
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 10:00
-                         div.col-sm-12.medicines(style="background:#DDDDDD")
-                           div.col-sm-3
-                             p 
-                             span #{bed._patient._medication[1].name}
-
-                           div.col-sm-9.schhold
-                             div.col-sm-1
-                             div.col-sm-1.cnt 03:00
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 06:00
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 10:00
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                         div.col-sm-12.medicines
-                           div.col-sm-3
-                             p Medicine Name
-                           div.col-sm-9.schhold
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 03:00
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 06:00
-                             div.col-sm-1
-                             div.col-sm-1
-                             div.col-sm-1.cnt 10:00
+                           each med in bed._patient._medication
+                             div.col-sm-3
+                               p
+                               span #{med.name}
+                             div.col-sm-9.schhold
+                              each tim in med._timetable
+                                div.col-sm-1  #{tim.time}
+                               
+                         
+                             

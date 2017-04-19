@@ -28,7 +28,7 @@ router.get('/home', checkAuthentication, function(req, res) {
 
     // Patient.find({}).sort({name:1}).exec(function(err,pat){
      // Timetable.find({}).sort({time:-1}).populate({path:'_medication',model:'medication',populate:{path:'_station',model:'Station'}}).exec(function(err,tim){
-        Timetable.find({}).sort({time:-1}).exec(function(err,tim){
+        Timetable.find({}).sort({time:1}).exec(function(err,tim){
         if (err) return console.error(err);
         var arr_bed=[];
         for (var key in tim) {
@@ -53,8 +53,21 @@ router.get('/home', checkAuthentication, function(req, res) {
             } 
         // console.log(JSON.stringify(arr_bed_new));
         // for (var key in  arr_bed_new)
-        Bed.find({'_id': {$in:arr_bed_new}}).populate({path:'_patient',model:'Patient',populate:{path:'_medication',model:'Medication',populate:{path:'_timetable',model:'Timetable'}}}).exec(function(err,bed){ 
-            console.log(JSON.stringify(bed));
+        Bed.find({'_id': {$in:arr_bed_new}}).populate({path:'_patient',model:'Patient',populate:{path:'_medication',model:'Medication',populate:{path:'_timetable',model:'Timetable'}}}).exec(function(err,bedd){
+        var bed=[];
+        // console.log(JSON.stringify(bed[0]._id));
+        for (var key in arr_bed_new)
+        {
+            for (var key2 in bedd)
+            {
+                if(arr_bed_new[key].toString()==bedd[key2]._id.toString())
+                {
+                    bed.push(bedd[key2])
+                }
+            }
+
+        }
+
          res.render('home', {user: req.user, tims:tim,abn:arr_bed_new,beds:bed});
             });
     });
