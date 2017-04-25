@@ -6,10 +6,12 @@ var Bed = require('../models/bed');
 var Patient = require('../models/patient');
 var Medication = require('../models/medication');
 var Timetable = require('../models/timetable');
+var Device = require('../models/device');
 var router = express.Router();
 var mongoose = require('mongoose');
 var ObjectId = mongoose.Types.ObjectId;
-
+var wifi = require('node-wifi');
+var request=require('request');
 function checkAuthentication(req, res, next) {
     if (req.isAuthenticated()) {
         next();
@@ -26,19 +28,18 @@ router.get('/', checkAuthentication, function(req, res) {
 });
 router.get('/home', checkAuthentication, function(req, res) {
 
-    // Patient.find({}).sort({name:1}).exec(function(err,pat){
-     // Timetable.find({}).sort({time:-1}).populate({path:'_medication',model:'medication',populate:{path:'_station',model:'Station'}}).exec(function(err,tim){
-        Timetable.find({}).sort({time:1}).exec(function(err,tim){
+        Timetable.find({'station':req.session.station,'userid':req.user.id}).sort({time:1}).populate({path:'station',model:'Station'}).exec(function(err,tim){
         if (err) return console.error(err);
         var arr_bed=[];
         for (var key in tim) {
             arr_bed[key]=tim[key]._bed;
 
         }
+
         var arr_bed_new=[];
         var n=arr_bed.length;
         var count=0;
-        for(var c=0;c<n;c++) //For removing duplicate elements
+        for(var c=0;c<n;c++) //For removing duplicate bed ids 
             { 
                 for(var d=0;d<count;d++) 
                 { 
@@ -51,11 +52,9 @@ router.get('/home', checkAuthentication, function(req, res) {
                     count++; 
                 } 
             } 
-        // console.log(JSON.stringify(arr_bed_new));
-        // for (var key in  arr_bed_new)
         Bed.find({'_id': {$in:arr_bed_new}}).populate({path:'_patient',model:'Patient',populate:{path:'_medication',model:'Medication',populate:{path:'_timetable',model:'Timetable'}}}).exec(function(err,bedd){
+        // reordering to sorted order
         var bed=[];
-        // console.log(JSON.stringify(bed[0]._id));
         for (var key in arr_bed_new)
         {
             for (var key2 in bedd)
@@ -63,12 +62,13 @@ router.get('/home', checkAuthentication, function(req, res) {
                 if(arr_bed_new[key].toString()==bedd[key2]._id.toString())
                 {
                     bed.push(bedd[key2])
+
                 }
             }
 
         }
 
-         res.render('home', {user: req.user, tims:tim,abn:arr_bed_new,beds:bed});
+         res.render('home', {user: req.user,beds:bed});
             });
     });
 
@@ -98,7 +98,7 @@ router.get('/addstation', checkAuthentication, function(req, res) {
             } else {
                 //  console.log(req.body.stations);
 
-                Station.find(function(err, stat) {
+                Station.find({'uid':req.user.id}).exec(function(err, stat) {
                     if (err) return console.error(err);
                     res.render('addstation', {
                         user: req.user,
@@ -116,7 +116,7 @@ router.get('/addstation', checkAuthentication, function(req, res) {
 });
 router.get('/addpatient', checkAuthentication, function(req, res) {
 
-    Bed.find().populate('_station').exec(function(err, bed) {
+    Bed.find({'_station':req.session.station}).populate('_station').exec(function(err, bed) {
         if (err) return console.error(err);
         // console.log(bed);    
         res.render('addpatient', {
@@ -131,10 +131,44 @@ router.get('/addbed', checkAuthentication, function(req, res) {
         user: req.user
     });
 });
+
 router.get('/adddevice', checkAuthentication, function(req, res) {
-    res.render('adddevice', {
-        user: req.user
+    wifi.init({
+        iface : null // network interface, choose a random wifi interface if set to null 
     });
+    wifi.scan(function(err, networks) {
+        if (err) {
+            console.log(err);
+        } else {
+            console.log(networks);
+        }
+        res.render('adddevice', {
+            user: req.user,
+            network:networks
+        });
+    });
+    
+});
+router.get('/addwifi', checkAuthentication, function(req, res) {
+    wifi.connect({ ssid : req.query.wifiname}, function(err) {
+        if (err) {
+            console.log(err);
+        }
+        else{
+            console.log('connected');
+        }
+    });
+    console.log(req.query.wifiname);
+        
+    });
+router.get('/connectdevice', checkAuthentication, function(req, res) {
+   // var link='http://192.168.4.1/wifisave?s=EVELABS_TECH&p=BQQJUDWB&server=192.168.0.13';
+   // console.log(link);
+   // res.(link);
+   request('http://192.168.4.1/wifisave?s=EVELABS_TECH&p=BQQJUDWB&server=192.168.0.13', function (error, response, body) {
+     console.log('error:', error); // Print the error if one occurred 
+     console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received 
+   });
 });
 router.get('/addivset', checkAuthentication, function(req, res) {
     res.render('addivset', {
@@ -240,7 +274,9 @@ console.log(req.body);
 								 var timin={};
 							 	 timin._bed=req.body.bed;
 								 timin._medication=currentValue._id;
+                                 timin.station=req.session.station;
 								 timin.infused="not_infused";
+                                 timin.userid=req.user.id;
 								 timin.time=arrin[j];
 								 tim[cn]=timin;
 								 cn++;
@@ -270,7 +306,6 @@ console.log(req.body);
     });
 
 });
-
 
 router.post('/register', function(req, res) {
     Account.register(new Account({

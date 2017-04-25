@@ -11,12 +11,13 @@ client.on('message', function(topic, message) {
 
     var res = topic.split("/");
     var id = res[1];
+    console.log(res[1]);
 if(id=="599869"){
 
     if (res[2] == 'rate') {
 	
 	        if (message == "list") {
-	           	 client.publish('dripo/' + id + '/pat', "Vishnu*100*Sanjai*105*Sruthy*103*Anand*102*");
+	           	 client.publish('dripo/' + id + '/pat', "");
 	    	} else if (message == "df") {
 	        	client.publish('dripo/' + id + '/df', "60*20*15*");
 	    	} else {

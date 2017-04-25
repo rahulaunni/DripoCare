@@ -37,3 +37,21 @@ $( ".leftbar .icon" ).click(function(){
 	
 });
 
+
+$(document).on("click","#middlebar .icon",function(){
+	$.get($(this).attr("data-url"), function( data ) {
+  $( ".middlebar" ).html( data );
+});
+});
+
+$(document).on("click","#middlebar .wifiname",function(){
+	$.get($(this).attr("data-url"), function( data ) {
+  $( ".middlebar" ).html( data );
+});
+});
+
+$(document).on("click","#middlebar .connection",function(){
+	$.get($(this).attr("data-url"), function( data ) {
+  $( ".middlebar" ).html( data );
+});
+});
