@@ -12,6 +12,9 @@ var mongoose = require('mongoose');
 var ObjectId = mongoose.Types.ObjectId;
 var wifi = require('node-wifi');
 var request=require('request');
+const wifiPassword = require('wifi-password');
+const wifiName = require('wifi-name');
+var ip = require('ip');
 function checkAuthentication(req, res, next) {
     if (req.isAuthenticated()) {
         next();
@@ -131,8 +134,19 @@ router.get('/addbed', checkAuthentication, function(req, res) {
         user: req.user
     });
 });
-
+//to get wifi password
 router.get('/adddevice', checkAuthentication, function(req, res) {
+    wifiName().then(name => {
+        var wifiname= name;
+        wifiPassword().then(password => {
+            var wifipass=password;
+            var ipaddress= ip.address();
+            console.log(' wifi SSID= ' + wifiname + ' wifi password= ' + wifipass +' ipaddress= ' + ipaddress)
+            req.session.wifissid=wifiname;
+            req.session.wifiPassword=wifipass;
+            req.session.ipaddress=ipaddress;
+        });
+    });
     wifi.init({
         iface : null // network interface, choose a random wifi interface if set to null 
     });
@@ -140,14 +154,13 @@ router.get('/adddevice', checkAuthentication, function(req, res) {
         if (err) {
             console.log(err);
         } else {
-            console.log(networks);
+            // console.log(networks);
         }
         res.render('adddevice', {
             user: req.user,
             network:networks
         });
-    });
-    
+    });  
 });
 router.get('/addwifi', checkAuthentication, function(req, res) {
     wifi.connect({ ssid : req.query.wifiname}, function(err) {
@@ -156,18 +169,26 @@ router.get('/addwifi', checkAuthentication, function(req, res) {
         }
         else{
             console.log('connected');
+            // var device_to_add = new Device({
+            //     divid: req.query.wifiname,
+            //     uid: req.user.id,
+            //     sname: req.session.station
+            // });
+            Device.collection.update({divid:req.query.wifiname},{$set:{divid:req.query.wifiname,uid:req.user.id,sname:req.session.station}},{upsert:true})
+            // device_to_add.save(function(err, device_to_add) {
+            //     if (err) return console.error(err);
+            //     else
+            //         console.log("okkk");
+            // });
         }
-    });
-    console.log(req.query.wifiname);
-        
+    });        
     });
 router.get('/connectdevice', checkAuthentication, function(req, res) {
-   // var link='http://192.168.4.1/wifisave?s=EVELABS_TECH&p=BQQJUDWB&server=192.168.0.13';
-   // console.log(link);
-   // res.(link);
-   request('http://192.168.4.1/wifisave?s=EVELABS_TECH&p=BQQJUDWB&server=192.168.0.13', function (error, response, body) {
+    console.log('http://192.168.4.1/wifisave?s='+req.session.wifissid+'&p='+req.session.wifiPassword+'&server='+req.session.ipaddress);
+   request('http://192.168.4.1/wifisave?s='+req.session.wifissid+'&p='+req.session.wifiPassword+'&server='+req.session.ipaddress, function (error, response, body) {
      console.log('error:', error); // Print the error if one occurred 
-     console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received 
+     console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+     console.log(body);
    });
 });
 router.get('/addivset', checkAuthentication, function(req, res) {
