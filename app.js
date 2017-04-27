@@ -259,11 +259,11 @@ client.on('message', function(topic, message) {
                     }
                     // For publishing Bed Name from database
                         var pub_bedd=[];
-                        for (var key in bedd)
+                        for (var key in bed)
                         {
-                          pub_bedd.push(bedd[key].bname); 
+                          pub_bedd.push(bed[key].bname); 
                           pub_bedd.push('&'); 
-                          pub_bedd.push(bedd[key]._id); 
+                          pub_bedd.push(bed[key]._id); 
                           pub_bedd.push('&');  
                         }
                         var pub_bed_slicer=pub_bedd.slice(0,19);
@@ -276,26 +276,75 @@ client.on('message', function(topic, message) {
             }
           }
         else if(res[2]== 'med_req'){
-            Bed.find({'_id':message}).populate({path:'_patient',model:'Patient',populate:{path:'_medication',model:'Medication'}}).exec(function(err,bedd){
-                console.log(JSON.stringify(bedd));
-            var pub_med=[];
-            for(var key in bedd._patient._medication){
-                pub_med.push(bedd[0]._patient._medication[key].name);
-                pub_bedd.push('&');
-                pub_med.push(bedd[0]._patient._medication[key]._id);
-                pub_bedd.push('&');  
-            }
-            console.log(pub_med);
-            client.publish('dripo/' + id + '/med',pub_med);
+            var bed_id=message.toString();
+            Timetable.find({'bed':bed_id,'infused':'not_infused'}).sort({time:1}).populate({path:'_medication',model:'Medication'}).exec(function(err,tim){
+                if (err) return console.error(err);
+                var arr_med=[];
+                for (var key in tim) {
+                    arr_med[key]=tim[key]._medication._id;
+
+                }
+                var arr_med_new=[];
+                var n=arr_med.length;
+                var count=0;
+                for(var c=0;c<n;c++) //For removing duplicate bed ids 
+                    { 
+                        for(var d=0;d<count;d++) 
+                        { 
+                            if(arr_med[c].toString()==arr_med_new[d].toString()) 
+                                break; 
+                        } 
+                        if(d==count) 
+                        { 
+                            arr_med_new[count] = arr_med[c]; 
+                            count++; 
+                        } 
+                    } 
+                Medication.find({'_id': {$in:arr_med_new}}).exec(function(err,medd){
+                    if (err) return console.error(err);
+                    var med=[];
+                    for (var key in arr_med_new)
+                    {
+                        for (var key2 in medd)
+                        {
+                            if(arr_med_new[key].toString()==medd[key2]._id.toString())
+                            {
+                                med.push(medd[key2])
+
+                            }
+                        }
+
+                    }
+                    // For publishing Bed Name from database
+                        var pub_medd=[];
+                        for (var key in med)
+                        {
+                          pub_medd.push(med[key].name); 
+                          pub_medd.push('&'); 
+                          pub_medd.push(med[key]._id); 
+                          pub_medd.push('&');  
+                        }
+                        var pub_med=pub_medd.join('');
+                        client.publish('dripo/' + id + '/med',pub_med);
+
+                        });
           }); 
 
             
         }
 
-       // else if (res[2]== 'rate_req'){
-       //     if(message == "Beer"){
-       //         client.publish('dripo/' + id + '/rate2set', "Patient&100&100&100&");
-       //     }
+       else if (res[2]== 'rate_req'){
+          Medication.find({'_id':message}).populate({path:'_bed',model:'Bed',populate:{path:'_patient',model:'Patient'}}).exec(function(err,ratee){
+            if (err) return console.error(err);
+            var rate=ratee[0].rate;
+            var pname=ratee[0]._bed._patient.name;
+            var vol=100;
+            var alert=100;
+            var pub_rate=pname+'&'+vol+'&'+rate+'&'+alert+'&';
+            console.log(pub_rate);
+            client.publish('dripo/' + id + '/rate2set',pub_rate);
+        });
+        }
        }); 
         
     

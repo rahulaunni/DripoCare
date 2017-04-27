@@ -9,6 +9,7 @@ station:String,
 userid:String,
 infused:String,
 time:Number,
+bed:String
 });
 
 module.exports = mongoose.model('Timetable',timetable);

@@ -294,6 +294,7 @@ console.log(req.body);
 							 for(var j=0;j<arrin.length;j++){
 								 var timin={};
 							 	 timin._bed=req.body.bed;
+                                 timin.bed=req.body.bed;
 								 timin._medication=currentValue._id;
                                  timin.station=req.session.station;
 								 timin.infused="not_infused";
