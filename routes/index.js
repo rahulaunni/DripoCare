@@ -70,7 +70,6 @@ router.get('/home', checkAuthentication, function(req, res) {
             }
 
         }
-
          res.render('home', {user: req.user,beds:bed});
             });
     });
