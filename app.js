@@ -108,7 +108,7 @@ client.on('message', function(topic, message) {
         if (err) return console.error(err);
         if (res[2] == 'req') {
                 if (message == "df") {
-                    console.log(dev[0].divid);
+                    // console.log(dev[0].divid);
                     client.publish('dripo/' + id + '/df', "60&60&20&20&15&15&10&10&");
                 } 
             }
