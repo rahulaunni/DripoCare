@@ -97,7 +97,7 @@ display:flex;
 
 .middlebar .card {
 background:#263238;
-text-align:center;
+text-align:right;
 display:flex;
 }
 .bed{
@@ -199,6 +199,7 @@ border-right:1px solid #AAAAAA;
 }
 .infusion{
   background-color: #21B698;
+  padding-right: 0px;
 }
 .infusion h4{
   color: white;
@@ -237,4 +238,7 @@ border-right:1px solid #AAAAAA;
   background-color: #21B698;
   margin-left: .2em;
 
+}
+.card .infusin .del span{
+  text-align: right;
 }
