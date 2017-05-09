@@ -31,19 +31,20 @@ router.get('/', checkAuthentication, function(req, res) {
     });
 });
 router.get('/home', checkAuthentication, function(req, res) {
-
+        //find timetable and sort in ascending order,there will be duplicates beacause search query is station and user id
         Timetable.find({'station':req.session.station,'userid':req.user.id}).sort({time:1}).populate({path:'station',model:'Station'}).exec(function(err,tim){
         if (err) return console.error(err);
+        //storing sorted bed ids into an array
         var arr_bed=[];
         for (var key in tim) {
             arr_bed[key]=tim[key]._bed;
 
         }
-
+        //check for the duplicate bed id reference and eliminating it
         var arr_bed_new=[];
         var n=arr_bed.length;
         var count=0;
-        for(var c=0;c<n;c++) //For removing duplicate bed ids 
+        for(var c=0;c<n;c++)
             { 
                 for(var d=0;d<count;d++) 
                 { 
@@ -55,14 +56,16 @@ router.get('/home', checkAuthentication, function(req, res) {
                     arr_bed_new[count] = arr_bed[c]; 
                     count++; 
                 } 
-            } 
+            }
+        //find the beds using array of bed ids after eliminating duplicates and populating all reference model for rendering home page 
         Bed.find({'_id': {$in:arr_bed_new}}).populate({path:'_patient',model:'Patient',populate:{path:'_medication',model:'Medication',populate:{path:'_timetable',model:'Timetable',options:{ sort: { 'time': 1 }}}}}).exec(function(err,bedd){
+        //saving soreted patient ids for find next infusion time
         var arr_pat=[];
         for (var key in bedd) {
             arr_pat[key]=bedd[key]._patient._id;
 
         }
-        // reordering to sorted order
+        //reordering the returened array of object to sorted order
         var bed=[];
         for (var key in arr_bed_new)
         {
@@ -76,12 +79,14 @@ router.get('/home', checkAuthentication, function(req, res) {
             }
 
         }
+        //find and sorting timetable by passing patient id array as search query to get next infusion time
         Timetable.find({'patient':{$in:arr_pat},'infused':'not_infused'}).sort({time:1}).exec(function(err,timee){
             if (err) return console.error(err);
+            //for removing the repeated or duplicate patient referenece from the sorted time           
             var arr_time_new=[];
             var n=timee.length;
             var count=0;
-            for(var c=0;c<n;c++) //For removing duplicate time  
+            for(var c=0;c<n;c++)  
                 { 
                     for(var d=0;d<count;d++) 
                     { 
@@ -94,12 +99,10 @@ router.get('/home', checkAuthentication, function(req, res) {
                         count++; 
                     } 
                 }
-
+          //modifying __v property of bed so that it can pass to jade 
           for(var key in bed){
             bed[key].__v = arr_time_new[key].time;
           }  
-        // console.log(JSON.stringify("this is time"+timee));
-        // console.log(arr_pat);
          res.render('home', {user: req.user,beds:bed});
             });
     });
@@ -163,63 +166,6 @@ router.get('/addbed', checkAuthentication, function(req, res) {
     res.render('addbed', {
         user: req.user
     });
-});
-//to get wifi password
-router.get('/adddevice', checkAuthentication, function(req, res) {
-    wifiName().then(name => {
-        var wifiname= name;
-        wifiPassword().then(password => {
-            var wifipass=password;
-            var ipaddress= ip.address();
-            // console.log(' wifi SSID= ' + wifiname + ' wifi password= ' + wifipass +' ipaddress= ' + ipaddress)
-            req.session.wifissid=wifiname;
-            req.session.wifiPassword=wifipass;
-            req.session.ipaddress=ipaddress;
-        });
-    });
-    wifi.init({
-        iface : null // network interface, choose a random wifi interface if set to null 
-    });
-    wifi.scan(function(err, networks) {
-        if (err) {
-            console.log(err);
-        } else {
-            // console.log(networks);
-        }
-        res.render('adddevice', {
-            user: req.user,
-            network:networks
-        });
-    });  
-});
-router.get('/addwifi', checkAuthentication, function(req, res) {
-    wifi.connect({ ssid : req.query.wifiname}, function(err) {
-        if (err) {
-            console.log(err);
-        }
-        else{
-            console.log('connected');
-            // var device_to_add = new Device({
-            //     divid: req.query.wifiname,
-            //     uid: req.user.id,
-            //     sname: req.session.station
-            // });
-            Device.collection.update({divid:req.query.wifiname},{$set:{divid:req.query.wifiname,uid:req.user.id,sname:req.session.station}},{upsert:true})
-            // device_to_add.save(function(err, device_to_add) {
-            //     if (err) return console.error(err);
-            //     else
-            //         console.log("okkk");
-            // });
-        }
-    });        
-    });
-router.get('/connectdevice', checkAuthentication, function(req, res) {
-    console.log('http://192.168.4.1/wifisave?s='+req.session.wifissid+'&p='+req.session.wifiPassword+'&server='+req.session.ipaddress);
-   request('http://192.168.4.1/wifisave?s='+req.session.wifissid+'&p='+req.session.wifiPassword+'&server='+req.session.ipaddress, function (error, response, body) {
-     console.log('error:', error); // Print the error if one occurred 
-     console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-     console.log(body);
-   });
 });
 router.get('/addivset', checkAuthentication, function(req, res) {
     res.render('addivset', {
@@ -385,6 +331,60 @@ router.post('/login', passport.authenticate('local'), function(req, res) {
     res.redirect('/addstation?add_flag=null');
 });
 
+router.post('/deletebed', checkAuthentication, function(req, res) {
+    console.log(req.query.bed);
+    Bed.update({_id:req.query.bed},{$unset:{_patient:""}},function(err,bed){
+      console.log(bed);  
+    });
+    Patient.update({_bed:req.query.bed},{$unset:{_bed:""}},function(err,bed){
+      console.log(bed);  
+    });
+    Timetable.collection.remove({bed:req.query.bed})
+    res.redirect('/');
 
-
+    
+});
+//to get wifi password@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@@
+router.get('/adddevice', checkAuthentication, function(req, res) {
+    wifiName().then(name => {
+        var wifiname= name;
+        wifiPassword().then(password => {
+            var wifipass=password;
+            var ipaddress= ip.address();
+            req.session.wifissid=wifiname;
+            req.session.wifiPassword=wifipass;
+            req.session.ipaddress=ipaddress;
+        });
+    });
+    wifi.init({
+        iface : null // network interface, choose a random wifi interface if set to null 
+    });
+    wifi.scan(function(err, networks) {
+        if (err) {
+            console.log(err);
+        } else {
+        }
+        res.render('adddevice', {
+            user: req.user,
+            network:networks
+        });
+    });  
+});
+router.get('/addwifi', checkAuthentication, function(req, res) {
+    wifi.connect({ ssid : req.query.wifiname}, function(err) {
+        if (err) {
+            console.log(err);
+        }
+        else{
+            console.log('connected');
+        }
+    });        
+    console.log('http://192.168.4.1/wifisave?s='+req.session.wifissid+'&p='+req.session.wifiPassword+'&server='+req.session.ipaddress);
+   request('http://192.168.4.1/wifisave?s='+req.session.wifissid+'&p='+req.session.wifiPassword+'&server='+req.session.ipaddress, function (error, response, body) {
+     console.log('error:', error); // Print the error if one occurred 
+     console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
+     console.log(body);
+     Device.collection.update({divid:req.query.wifiname},{$set:{divid:req.query.wifiname,uid:req.user.id,sname:req.session.station}},{upsert:true})
+   });
+});
 module.exports = router;
