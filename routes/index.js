@@ -16,6 +16,7 @@ var request=require('request');
 const wifiPassword = require('wifi-password');
 const wifiName = require('wifi-name');
 var ip = require('ip');
+var ObjectId = require('mongodb').ObjectID;
 function checkAuthentication(req, res, next) {
     if (req.isAuthenticated()) {
         next();
@@ -152,7 +153,7 @@ router.get('/addstation', checkAuthentication, function(req, res) {
 });
 router.get('/addpatient', checkAuthentication, function(req, res) {
 
-    Bed.find({'_station':req.session.station}).populate('_station').exec(function(err, bed) {
+    Bed.find({'_station':req.session.station,'bedstatus':'unoccupied'}).populate('_station').exec(function(err, bed) {
         if (err) return console.error(err);
         // console.log(bed);    
         res.render('addpatient', {
@@ -162,15 +163,70 @@ router.get('/addpatient', checkAuthentication, function(req, res) {
     })
 
 });
+router.get('/editpatient',checkAuthentication,function(req,res){
+    Bed.find({'_id':req.query.bed}).populate({path:'_patient',model:'Patient',populate:{path:'_medication',model:'Medication',populate:{path:'_timetable',model:'Timetable',options:{ sort: { 'time': 1 }}}}}).exec(function(err,bed){
+        if (err)return console,log(err);
+            Bed.find({'_station':req.session.station,'bedstatus':'unoccupied'}).exec(function(err,bedlist){
+                Bed.find({'_id':req.query.bed}).exec(function(err,bedd){
+                    var thisbed=bedd[0]; 
+                    bedlist.splice(0, 0,thisbed);
+                        res.render('editpatient',{
+                            user: req.user,
+                            beds:bed,
+                            bedlists:bedlist
+                    });
+                        console.log(bedlist);
+
+
+                });
+           
+        });
+
+    });
+
+});
+router.get('/listpatient',checkAuthentication,function(req,res){
+    Patient.find({'_station':req.session.station}).exec(function(err,patient){
+        if (err)return console,log(err);
+        res.render('listpatient',{
+            user: req.user,
+            patients:patient
+        });
+
+    });
+
+});
 router.get('/addbed', checkAuthentication, function(req, res) {
     res.render('addbed', {
         user: req.user
     });
 });
+router.get('/listbed',checkAuthentication,function(req,res){
+    Bed.find({'_station':req.session.station}).exec(function(err,bed){
+        if (err)return console,log(err);
+        res.render('listbed',{
+            user: req.user,
+            beds:bed
+        });
+
+    });
+
+});
 router.get('/addivset', checkAuthentication, function(req, res) {
     res.render('addivset', {
         user: req.user
     });
+});
+router.get('/listivset',checkAuthentication,function(req,res){
+    Ivset.find({'sname':req.session.station}).exec(function(err,ivset){
+        if (err)return console,log(err);
+        res.render('listivset',{
+            user: req.user,
+            ivsets:ivset
+        });
+
+    });
+
 });
 router.get('/logout', function(req, res) {
     req.logout();
@@ -186,8 +242,10 @@ router.get('/login', function(req, res) {
 
 router.post('/addbed', checkAuthentication, function(req, res) {
 
+    // console.log(req.body.bname);
     var bed_to_add = new Bed({
         bname: req.body.bname,
+        bedstatus:'unoccupied',
         _station: req.session.station
     });
     bed_to_add.save(function(err, bed_to_add) {
@@ -228,8 +286,10 @@ console.log(req.body);
 		var patient= new Patient({
         name: req.body.patient.name,
         age: req.body.patient.age,
+        patientstatus:'active',
         weight: req.body.patient.weight,
         _bed: req.body.bed,
+        _station:req.session.station
 		});
        patient.save(function(err, patient_to_add) {
         if (err) return console.error(err);
@@ -237,6 +297,7 @@ console.log(req.body);
 			// get medications
             Bed.findOne({ _id: req.body.bed}, function (err, doc){
               doc._patient = patient;
+              doc.bedstatus = 'occupied';
               doc.save();
             });			
             var med=[{}];
@@ -305,6 +366,111 @@ console.log(req.body);
     });
 
 });
+router.post('/updatepatient',checkAuthentication, function(req,res){
+//get the array of medication ids and time ids to be deleted passing values from editpatient.js 
+    var delete_medication=[];
+    for (var key in req.body.delete_medications) {
+        delete_medication[key]=ObjectId(req.body.delete_medications[key]);
+    }
+    var delete_timedata=[];
+    for (var key in req.body.delete_timedata) {
+        delete_timedata[key]=ObjectId(req.body.delete_timedata[key]);
+    }
+    var patid = ObjectId(req.body.patient.pid)
+    var bedid = ObjectId(req.body.delbed)
+    Patient.collection.remove({'_id':patid})
+    Medication.collection.remove({'_id': {$in:delete_medication}})
+    Timetable.collection.remove({'_id': {$in:delete_timedata}})
+    Bed.collection.update({'_id':bedid},{$unset:{_patient:""}},function(err,bed){
+      console.log(bed);  
+    });
+    Bed.collection.update({'_id':bedid},{$set:{bedstatus:"unoccupied"}},function(err,bed){
+      console.log(bed);  
+    });
+    // ADDING PATIENT
+            var patient= new Patient({
+            name: req.body.patient.name,
+            patientstatus:'active',
+            age: req.body.patient.age,
+            weight: req.body.patient.weight,
+            _bed: req.body.bed,
+            _station:req.session.station
+            });
+           patient.save(function(err, patient_to_add) {
+            if (err) return console.error(err);
+                
+                // get medications
+                Bed.findOne({ _id: req.body.bed}, function (err, doc){
+                  doc._patient = patient;
+                  doc.bedstatus = 'occupied';
+                  doc.save();
+                });         
+                var med=[{}];
+                for (var key in req.body.medications) {
+                    var medin={}
+                    medin._bed=req.body.bed,
+                    medin._station=req.session.station,
+                    medin.name=req.body.medications[key].name,
+                    medin.rate=req.body.medications[key].rate
+                    
+                    med[key]=medin;
+                    }
+                    
+                Medication.collection.insert(med, onInsert);
+
+                    function onInsert(err,docs) {
+                    if (err) {
+           
+                    } else {
+                            // console.log('med value');
+                            // console.log(med[0]._id);
+                            for (var key in med){
+                            Patient.collection.update({_id:patient._id},{$push:{_medication:med[key]._id}},{upsert:false})
+                            // add timings of medicine to timings collection
+                            }
+                            tim=[{}];
+                            var cn=0;
+                            docs.ops.forEach(function callback(currentValue, index, array) {
+                                
+                                 var arrin=req.body.medications[index].time;
+                                 for(var j=0;j<arrin.length;j++){
+                                     var timin={};
+                                     timin._bed=req.body.bed;
+                                     timin.bed=req.body.bed;
+                                     timin.patient=patient._id.toString();
+                                     timin._medication=currentValue._id;
+                                     timin.station=req.session.station;
+                                     timin.infused="not_infused";
+                                     timin.userid=req.user.id;
+                                     timin.time=arrin[j];
+                                     tim[cn]=timin;
+                                     cn++;
+                                     }
+                                                        
+                            });
+                            
+                            Timetable.collection.insert(tim, onInsert);
+                    
+                                    function onInsert(err,times) {
+                                        if (err) {
+                                        } else {
+                                        for (var key in med) 
+                                        {
+                                            for (var key2 in tim)
+                                                if(med[key]._id===tim[key2]._medication)
+                                        Medication.collection.update({_id:med[key]._id},{$push:{_timetable:tim[key2]._id}},{upsert:false})
+                                        }
+                                        res.redirect('/');
+                                        }
+                                    }
+
+                        }
+                    }
+            
+
+        });
+
+});
 router.post('/addivset', checkAuthentication, function(req, res) {
     console.log(req.body);
     Ivset.collection.update({ivdpf:req.body.ivdpf},{$set:{ivname:req.body.ivname,ivdpf:req.body.ivdpf,uid:req.user.id,sname:req.session.station}},{upsert:true})
@@ -336,9 +502,16 @@ router.post('/deletebed', checkAuthentication, function(req, res) {
     Bed.update({_id:req.query.bed},{$unset:{_patient:""}},function(err,bed){
       console.log(bed);  
     });
+    Bed.update({_id:req.query.bed},{$set:{bedstatus:"unoccupied"}},function(err,bed){
+      console.log(bed);  
+    });
+    Patient.update({_bed:req.query.bed},{$set:{patientstatus:"inactive"}},function(err,bed){
+      console.log(bed);  
+    });
     Patient.update({_bed:req.query.bed},{$unset:{_bed:""}},function(err,bed){
       console.log(bed);  
     });
+
     Timetable.collection.remove({bed:req.query.bed})
     res.redirect('/');
 
@@ -386,5 +559,16 @@ router.get('/addwifi', checkAuthentication, function(req, res) {
      console.log(body);
      Device.collection.update({divid:req.query.wifiname},{$set:{divid:req.query.wifiname,uid:req.user.id,sname:req.session.station}},{upsert:true})
    });
+});
+router.get('/listdevice',checkAuthentication,function(req,res){
+    Device.find({'sname':req.session.station}).exec(function(err,device){
+        if (err)return console,log(err);
+        res.render('listdevice',{
+            user: req.user,
+            devices:device
+        });
+
+    });
+
 });
 module.exports = router;
