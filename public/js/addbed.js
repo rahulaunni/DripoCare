@@ -6,12 +6,15 @@ $(".repeat").append(res);
 $(document).on('click','.remove',function(){
 $(this).parent().remove();
 });
-$(document).on('click','#submit_button',function(){
+$("#submit_bed").click(function(){
 	var data={};
 	data.bedname=[];
-	$( ".bedname" ).each(function(index){
+	$( ".bedadd").find(".bname" ).each(function(index){
 	data.bedname[index]=$(this).val();;
 	});
+	console.log("Ok");
+	console.log(data);
+
 					$.ajax({
 							type: 'POST',
 							data: JSON.stringify(data),

@@ -197,7 +197,7 @@ router.get('/listpatient',checkAuthentication,function(req,res){
 
 });
 router.get('/addbed', checkAuthentication, function(req, res) {
-    res.render('addbed', {
+    res.render('addbednew', {
         user: req.user
     });
 });
@@ -241,17 +241,24 @@ router.get('/login', function(req, res) {
 
 
 router.post('/addbed', checkAuthentication, function(req, res) {
-
-    // console.log(req.body.bname);
+    console.log(req.body.bedname);
+    var bedarr=[];
+    for (var key in req.body.bedname) {
+        bedarr[key]=req.body.bedname[key];
+    }
+    for(var i=0;i<bedarr.length;i++){
     var bed_to_add = new Bed({
-        bname: req.body.bname,
+        bname: bedarr[i],
         bedstatus:'unoccupied',
         _station: req.session.station
     });
     bed_to_add.save(function(err, bed_to_add) {
         if (err) return console.error(err);
-        res.redirect('/');
     });
+    }
+    console.log(i);
+    res.redirect('/');
+
 });
 router.post('/addstation', checkAuthentication, function(req, res) {
     var station_to_add = new Station({
