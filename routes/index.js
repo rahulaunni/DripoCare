@@ -309,11 +309,11 @@ console.log(req.body);
             });			
             var med=[{}];
 			for (var key in req.body.medications) {
-				var medin={}
+				var medin={};
 				medin._bed=req.body.bed,
 				medin._station=req.session.station,
 				medin.name=req.body.medications[key].name,
-				medin.rate=req.body.medications[key].rate
+				medin.rate=req.body.medications[key].rate,
 				
 				med[key]=medin;
 				}
@@ -534,6 +534,8 @@ router.get('/adddevice', checkAuthentication, function(req, res) {
             req.session.wifissid=wifiname;
             req.session.wifiPassword=wifipass;
             req.session.ipaddress=ipaddress;
+            console.log("ok");
+
         });
     });
     wifi.init({
@@ -563,9 +565,8 @@ router.get('/addwifi', checkAuthentication, function(req, res) {
    request('http://192.168.4.1/wifisave?s='+req.session.wifissid+'&p='+req.session.wifiPassword+'&server='+req.session.ipaddress, function (error, response, body) {
      console.log('error:', error); // Print the error if one occurred 
      console.log('statusCode:', response && response.statusCode); // Print the response status code if a response was received
-     console.log(body);
      Device.collection.update({divid:req.query.wifiname},{$set:{divid:req.query.wifiname,uid:req.user.id,sname:req.session.station}},{upsert:true})
-   });
+        });
 });
 router.get('/listdevice',checkAuthentication,function(req,res){
     Device.find({'sname':req.session.station}).exec(function(err,device){

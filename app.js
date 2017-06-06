@@ -44,8 +44,18 @@ passport.serializeUser(Account.serializeUser());
 passport.deserializeUser(Account.deserializeUser());
 
 // mongoose
-mongoose.connect('mongodb://localhost/dripov2');
-
+// 
+mongoose.connect('mongodb://localhost/dripov2',{ server: {reconnectTries:30,reconnectInterval:10000} }, function(error) {
+    if(error)
+    {   
+        
+        console.log("mongodb connection failed");
+    }
+    else
+    {
+        console.log("mongodb connection success");
+    }
+});
 app.use(session({secret: "Shhsssh"}));
 
 // catch 404 and forward to error handler
@@ -84,20 +94,19 @@ module.exports = app;
 
 // mqtt part*******************************************************************************************************************
 
-var mqtt = require('mqtt')
-var client = mqtt.connect('mqtt://localhost:1883')
+var mqtt = require('mqtt');
+var client = mqtt.connect('mqtt://localhost:1883');
 var Station = require('./models/stations');
 var Account = require('./models/account');
 var Bed = require('./models/bed');
 var Patient = require('./models/patient');
 var Medication = require('./models/medication');
 var Timetable = require('./models/timetable');
-var Device = require('./models/device')
-
+var Device = require('./models/device');
 client.on('connect', function() {
     console.log("started");
-    client.subscribe('dripo/#');
-})
+    client.subscribe('dripo/#',{ qos: 1});
+});
 
 
 client.on('message', function(topic, message) {
@@ -108,8 +117,8 @@ client.on('message', function(topic, message) {
         if (err) return console.error(err);
         if (res[2] == 'req') {
                 if (message == "df") {
-                    // console.log(dev[0].divid);
-                    client.publish('dripo/' + id + '/df', "60&60&20&20&15&15&10&10&");
+                    console.log(dev[0].divid);
+                    client.publish('dripo/' + id + '/df',"60&60&20&20&15&15&10&10&",{ qos: 1, retain: false });
                 } 
             }
         else if(res[2]=='bed_req'){
@@ -147,7 +156,7 @@ client.on('message', function(topic, message) {
                         {
                             if(arr_bed_new[key].toString()==bedd[key2]._id.toString())
                             {
-                                bed.push(bedd[key2])
+                                bed.push(bedd[key2]);
 
                             }
                         }
@@ -165,7 +174,7 @@ client.on('message', function(topic, message) {
                         var pub_bed_slicer=pub_bedd.slice(0,19);
                         var pub_bed=pub_bed_slicer.join('');
 
-                        client.publish('dripo/' + id + '/bed',pub_bed);
+                        client.publish('dripo/' + id + '/bed',pub_bed,{ qos: 1, retain: false });
 
                         });
                 });
@@ -205,7 +214,7 @@ client.on('message', function(topic, message) {
                         {
                             if(arr_med_new[key].toString()==medd[key2]._id.toString())
                             {
-                                med.push(medd[key2])
+                                med.push(medd[key2]);
 
                             }
                         }
@@ -221,7 +230,7 @@ client.on('message', function(topic, message) {
                           pub_medd.push('&');  
                         }
                         var pub_med=pub_medd.join('');
-                        client.publish('dripo/' + id + '/med',pub_med);
+                        client.publish('dripo/' + id + '/med',pub_med,{ qos: 1, retain: false });
 
                         });
           }); 
@@ -239,7 +248,7 @@ client.on('message', function(topic, message) {
             var alert=30;
             var pub_rate=pname+'&'+mname+'&'+vol+'&'+rate+'&'+alert+'&';
             console.log(pub_rate);
-            client.publish('dripo/' + id + '/rate2set',pub_rate);
+            client.publish('dripo/' + id + '/rate2set',pub_rate,{ qos: 1, retain: false });
         });
         }
        }); 
@@ -247,4 +256,3 @@ client.on('message', function(topic, message) {
     
 
 });
-
