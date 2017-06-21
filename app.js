@@ -114,14 +114,12 @@ client.on('message', function(topic, message) {
     var res = topic.split("/");
     var id = res[1];
         Device.find({'divid':id}).exec(function(err,dev){
-        if (err) return console.error(err);
-        if (res[2] == 'req') {
-                if (message == "df") {
-                    console.log(dev[0].divid);
-                    client.publish('dripo/' + id + '/df',"60&60&20&20&15&15&10&10&",{ qos: 1, retain: false });
-                } 
-            }
-        else if(res[2]=='bed_req'){
+        if (dev==0){
+            console.log(dev);
+            //client.publish('dripo/' + id + '/iv',"invalid",{ qos: 1, retain: false });
+        }
+        else{ 
+        if(res[2]=='bed_req'){
             if(message == "bed"){
                     Timetable.find({'station':dev[0].sname,'userid':dev[0].uid}).sort({time:1}).populate({path:'station',model:'Station'}).exec(function(err,tim){
                     if (err) return console.error(err);
@@ -156,7 +154,7 @@ client.on('message', function(topic, message) {
                         {
                             if(arr_bed_new[key].toString()==bedd[key2]._id.toString())
                             {
-                                bed.push(bedd[key2]);
+                                bed.push(bedd[key2])
 
                             }
                         }
@@ -214,7 +212,7 @@ client.on('message', function(topic, message) {
                         {
                             if(arr_med_new[key].toString()==medd[key2]._id.toString())
                             {
-                                med.push(medd[key2]);
+                                med.push(medd[key2])
 
                             }
                         }
@@ -251,8 +249,17 @@ client.on('message', function(topic, message) {
             client.publish('dripo/' + id + '/rate2set',pub_rate,{ qos: 1, retain: false });
         });
         }
+        else if (res[2] == 'req') {
+                if (message == "df") {
+                    console.log(dev[0].divid);
+                    client.publish('dripo/' + id + '/df',"60&60&20&20&15&15&10&10&",{ qos: 1, retain: false });
+                } 
+            }
+
+        }
        }); 
         
     
 
 });
+
