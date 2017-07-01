@@ -22,8 +22,9 @@ $(document).on('click','.timedata div',function(){
 
 //$("#submit_button").click(function(){
 //$(document).on('click','#submit_button',function(){
-$("#register").submit(function(e){
 //$(document).on('submit','#register',function(e){
+$("#register").submit(function(e){
+
  	    e.preventDefault();
 var data={};
 data.bed=$( "select[name='bedid']" ).val();
@@ -42,6 +43,7 @@ $( ".medicinedata" ).each(function( index ) {
 	
 	medicine_data.name=$(this).find("input[name='mname']").val();
 	medicine_data.rate=$(this).find("input[name='mrate']").val();
+	medicine_data.tvol=$(this).find("input[name='tvol']").val();
 	var j=0,cn=0;
 	$(this).find(".timedata div").each(function(index){
 		if($(this).attr('data-toggle')=='on'){
