@@ -9,6 +9,7 @@ $(document).on('click','.remove',function(){
 $(this).parent().remove();
 });
 //$(".timedata div").click(function(){
+// $(document).on("ready",function(){
 $(document).on('click','.timedata div',function(){
 	 if($(this).attr('data-toggle')=='off'){
 			$(this).addClass("select");
@@ -18,8 +19,8 @@ $(document).on('click','.timedata div',function(){
 	        $(this).attr('data-toggle','off');
 	       // $(this). removeAttr("data-id");
 		}
-	
-});
+	});
+// });
 
 //$("#submit_button").click(function(){
 //$(document).on('click','#submit_button',function(){
@@ -73,7 +74,25 @@ $( ".medicinedata" ).each(function( index ) {
 });
 
 console.log("Ok");
-
+var flag;
+for(var key in data.medications)
+{
+	if(data.medications[key].time.length>0)
+	{
+		flag=true;
+	}
+	else{
+		flag=false;
+		break;
+	}
+}
+console.log(flag);
+if(flag==false)
+{    	
+	$('#my').trigger('mouseenter');
+	// $("h5").append(" <b>Enter a time</b>.");
+}
+else{
 				$.ajax({
 						type: 'POST',
 						data: JSON.stringify(data),
@@ -85,4 +104,8 @@ console.log("Ok");
                     });
  
 	return false;
+}
+});
+$(document).ready(function(){
+    $('[data-toggle="tooltip"]').tooltip();   
 });
